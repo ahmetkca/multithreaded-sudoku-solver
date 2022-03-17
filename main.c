@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <stdbool.h>
 #include <pthread.h>
 
 #define ROW 9
@@ -31,7 +32,30 @@ void *read_sudoku_grid() {
     pthread_exit(NULL);
 }
 
+struct check_column_args {
+    int column_index;
+};
+
+void *check_column(void *vptr) {
+    struct check_column_args *arg = (struct check_column_args *) vptr;
+    int col = arg->column_index;
+    if (col < 0 || col >= COL)
+        pthread_exit(NULL);
+    int i = 1;
+    for (int i = 1; i <= 9; i++) {
+        bool found = false;
+        for (int r = 0; r < ROW && !found; r++) {
+            if (grid[r][col] == i)
+                found = true;
+        }
+        if (!found)
+            pthread_exit((void *) false);
+    }
+    pthread_exit((void *) true);
+}
+
 int main(int argc, char *argv[]) {
+
     pthread_t tid;
     pthread_create(&tid, NULL, &read_sudoku_grid, NULL);
     pthread_join(tid, NULL);
